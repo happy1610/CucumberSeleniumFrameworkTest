@@ -10,8 +10,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class DatabaseSteps {
-
-
+    
     @Given("set the UserName and Password which get from DB")
     public void iFetchDataFromTheDatabase() {
         DatabaseUtil.connectToDatabase("jdbc:mysql://localhost:3306/mydatabase", "root", "admin");

@@ -11,7 +11,7 @@ import org.testng.annotations.Parameters;
         plugin = { "pretty",
                 "json:target/cucumber-reports/cucumber.json",
                 "com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"},
-        features = "src/test/resources/awesomecucumber",
+        features = "src/test/resources/awesomecucumber/Checkout.feature",
         glue = {"awesomecucumber"}
 )
 public class MyRunnerTest extends AbstractTestNGCucumberTests {
