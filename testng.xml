@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <suite name="Suite" parallel="none">
-    <test name="ChromeTest">
-        <parameter name="browserName" value="CHROME"/>
-        <classes>
-            <class name="awesomecucumber.runners.MyRunnerTest"/>
-        </classes>
-    </test> <!-- Test -->
-<!--    <test name="FirefoxTest">-->
-<!--        <parameter name="browserName" value="FIREFOX"/>-->
+<!--    <test name="ChromeTest">-->
+<!--        <parameter name="browserName" value="CHROME"/>-->
 <!--        <classes>-->
 <!--            <class name="awesomecucumber.runners.MyRunnerTest"/>-->
 <!--        </classes>-->
 <!--    </test> &lt;!&ndash; Test &ndash;&gt;-->
+    <test name="FirefoxTest">
+        <parameter name="browserName" value="FIREFOX"/>
+        <classes>
+            <class name="awesomecucumber.runners.MyRunnerTest"/>
+        </classes>
+    </test> <!-- Test -->
 <!--    <test name="EdgeTest">-->
 <!--        <parameter name="browserName" value="EDGE"/>-->
 <!--        <classes>-->
