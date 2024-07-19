@@ -40,11 +40,10 @@ jobs:
     
     - name: Find and Publish the Latest HTML File
       run: |
-        LATEST_SPARK_REPORT=$(ls -Art test-output/SparkReport*/test-output-report | tail -n 1)
-        echo "Latest SparkReport: $LATEST_SPARK_REPORT"
-        git checkout --orphan gh-pages
-        git rm -rf .
-        cp $LATEST_SPARK_REPORT .
-        git add .
-        git -c user.name='GitHub Actions' -c user.email='actions@github.com' commit -m 'Publish latest HTML file'
-        git push origin gh-pages --force
+          LATEST_SPARK_REPORT=$(ls -Art test-output/SparkReport*/test-output-report/*.html | tail -n 1)
+          echo "Latest SparkReport: $LATEST_SPARK_REPORT"
+          git checkout --orphan gh-pages
+          cp "$LATEST_SPARK_REPORT" .
+          git add .
+          git -c user.name='GitHub Actions' -c user.email='actions@github.com' commit -m 'Publish latest HTML file'
+          git push origin gh-pages --force
