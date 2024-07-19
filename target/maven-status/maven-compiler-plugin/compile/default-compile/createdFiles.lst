@@ -1,0 +1,10 @@
+com/rest/pojo/collection/CollectionRoot.class
+com/rest/pojo/collection/Info.class
+com/rest/pojo/workspace/WorkspaceRoot.class
+com/rest/pojo/collection/Header.class
+com/rest/pojo/collection/Url.class
+com/rest/pojo/collection/Collection.class
+com/rest/pojo/collection/Item.class
+com/rest/pojo/workspace/Workspace.class
+com/rest/pojo/collection/Request.class
+com/rest/pojo/collection/Folder.class
