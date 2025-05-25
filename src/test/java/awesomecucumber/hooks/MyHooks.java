@@ -3,12 +3,10 @@ package steps;
 import com.aventstack.extentreports.ExtentReports;
 import com.aventstack.extentreports.ExtentTest;
 import com.aventstack.extentreports.Status;
-import com.aventstack.extentreports.reporter.ExtentReporter;
 import com.aventstack.extentreports.reporter.ExtentSparkReporter;
 import io.cucumber.core.backend.TestCaseState;
 import io.cucumber.java.*;
 import io.cucumber.plugin.event.PickleStepTestStep;
-import io.cucumber.plugin.event.Step;
 import io.cucumber.plugin.event.TestCase;
 import io.cucumber.plugin.event.TestStep;
 import io.github.bonigarcia.wdm.WebDriverManager;
@@ -17,26 +15,19 @@ import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
-import org.testng.ITestContext;
 import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
 
-import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.Field;
-import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 
 public class Hook {
 
     private static ThreadLocal<WebDriver> driver = new ThreadLocal<>();
-    private static ThreadLocal<Map<Integer, List<TestStep>>> steps = ThreadLocal.withInitial(() -> new HashMap<>());
-    private static ThreadLocal<Map<Integer, Integer>> currentStepIndex = ThreadLocal.withInitial(() -> new HashMap<>());
-    private static ThreadLocal<Map<Integer, String>> currentStepName = ThreadLocal.withInitial(() -> new HashMap<>());
+    private static ThreadLocal<List<TestStep>> steps = ThreadLocal.withInitial(ArrayList::new);
+    private static ThreadLocal<Integer> currentStepIndex = ThreadLocal.withInitial(() -> 0);
+    private static ThreadLocal<String> currentStepName = ThreadLocal.withInitial(() -> "");
     public static ExtentReports extent;
     public static ExtentTest test;
 
@@ -57,15 +48,13 @@ public class Hook {
         testCaseField.setAccessible(true);
         TestCase testCase = (TestCase) testCaseField.get(testCaseState);
         List<TestStep> testStepList = testCase.getTestSteps();
-        steps.get().put((int) Thread.currentThread().getId(), new ArrayList<>());
-        System.out.println("Initializing steps for thread: " + Thread.currentThread().getId());
+        steps.set(new ArrayList<>());
         for (TestStep testStep : testStepList) {
             if (testStep instanceof PickleStepTestStep) {
-                steps.get().get((int) Thread.currentThread().getId()).add(testStep);
+                steps.get().add(testStep);
             }
         }
-
-
+        
         WebDriverManager.chromedriver().setup();
         ChromeOptions chromeOptions = new ChromeOptions();
         chromeOptions.addArguments("--headless");
@@ -76,10 +65,10 @@ public class Hook {
 
     @BeforeStep
     public void beforeEveryStep(Scenario scenario) {
-        PickleStepTestStep testStep = (PickleStepTestStep) steps.get().get(currentStepIndex.get().getOrDefault((int) Thread.currentThread().getId(), 0));
+        PickleStepTestStep testStep = (PickleStepTestStep) steps.get().get(currentStepIndex.get());
         String stepName = testStep.getStep().getText();
         System.out.println("Execute step: " + stepName);
-        currentStepName.get().put((int) Thread.currentThread().getId(), stepName);
+        currentStepName.set(stepName);
     }
 
 
@@ -90,14 +79,14 @@ public class Hook {
             String fullScreenshot = ((TakesScreenshot) driver.get()).getScreenshotAs(OutputType.BASE64);
             int threadId = (int) Thread.currentThread().getId();
             if (scenario.isFailed()) {
-                test.log(Status.FAIL, currentStepName.get().get(threadId), com.aventstack.extentreports.MediaEntityBuilder.createScreenCaptureFromBase64String(fullScreenshot).build());
+                test.log(Status.FAIL, currentStepName.get(), com.aventstack.extentreports.MediaEntityBuilder.createScreenCaptureFromBase64String(fullScreenshot).build());
             } else {
-                test.log(Status.PASS, currentStepName.get().get(threadId), com.aventstack.extentreports.MediaEntityBuilder.createScreenCaptureFromBase64String(fullScreenshot).build());
+                test.log(Status.PASS, currentStepName.get(), com.aventstack.extentreports.MediaEntityBuilder.createScreenCaptureFromBase64String(fullScreenshot).build());
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        currentStepIndex.get().put((int) Thread.currentThread().getId(), currentStepIndex.get().getOrDefault((int) Thread.currentThread().getId(), 0) + 1);
+        currentStepIndex.set(currentStepIndex.get()+ 1);
     }
 
     @After
