@@ -74,8 +74,9 @@ public class Hook {
         driver.get().manage().window().maximize();
     }
 
+    @BeforeStep
     public void beforeEveryStep(Scenario scenario) {
-        PickleStepTestStep testStep = (PickleStepTestStep) steps.get().get(currentStepIndex.get());
+        PickleStepTestStep testStep = (PickleStepTestStep) steps.get().get(currentStepIndex.get().getOrDefault((int) Thread.currentThread().getId(), 0));
         String stepName = testStep.getStep().getText();
         System.out.println("Execute step: " + stepName);
         currentStepName.get().put((int) Thread.currentThread().getId(), stepName);
