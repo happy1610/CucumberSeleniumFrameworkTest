@@ -2,6 +2,7 @@ package steps;
 
 import com.aventstack.extentreports.ExtentReports;
 import com.aventstack.extentreports.ExtentTest;
+import com.aventstack.extentreports.Status;
 import com.aventstack.extentreports.reporter.ExtentReporter;
 import com.aventstack.extentreports.reporter.ExtentSparkReporter;
 import io.cucumber.core.backend.TestCaseState;
@@ -16,6 +17,9 @@ import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.testng.ITestContext;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,19 +34,22 @@ public class Hook {
     private static ThreadLocal<WebDriver> driver = new ThreadLocal<>();
     private static ThreadLocal<List<TestStep>> steps = ThreadLocal.withInitial(ArrayList::new);
     private static ThreadLocal<Integer> currentStepIndex = ThreadLocal.withInitial(() -> 0);
+    private static ThreadLocal<String> currentStepName = ThreadLocal.withInitial(() -> "");
     public static ExtentReports extent;
     public static ExtentTest test;
 
     public Hook() {
     }
-
-    @Before
-    public void initializeTest(Scenario scenario) throws NoSuchFieldException, IllegalAccessException {
+    @BeforeClass
+    public void beforeClass(){
         ExtentSparkReporter htmlReporter = new ExtentSparkReporter("extent-report.html");
         extent = new ExtentReports();
         extent.attachReporter(htmlReporter);
-        test = extent.createTest(scenario.getName());
+    }
 
+    @Before
+    public void initializeTest(Scenario scenario) throws NoSuchFieldException, IllegalAccessException {
+        test = extent.createTest(scenario.getName());
 
         Field f = scenario.getClass().getDeclaredField("delegate");
         f.setAccessible(true);
@@ -72,33 +79,42 @@ public class Hook {
         PickleStepTestStep testStep = (PickleStepTestStep) steps.get().get(currentStepIndex.get());
         String stepName = testStep.getStep().getText();
         System.out.println("Execute step: " + stepName);
-        test.createNode(stepName);
+        currentStepName.set(stepName);
     }
 
 
     @AfterStep
     public void afterEveryStep(Scenario scenario) {
-        if (scenario.isFailed()) {
-            try {
-                // Capture full-page screenshot
-                File fullScreenshot = ((TakesScreenshot) driver.get()).getScreenshotAs(OutputType.FILE);
-                byte[] fullFileContent = Files.readAllBytes(fullScreenshot.toPath());
-                scenario.attach(fullFileContent, "image/png", "Full-page screenshot for step: " + scenario.getName());
-            } catch (IOException e) {
-                e.printStackTrace();
+        try {
+            // Capture full-page screenshot
+            String fullScreenshot = ((TakesScreenshot) driver.get()).getScreenshotAs(OutputType.BASE64);
+            if (scenario.isFailed()) {
+                test.log(Status.FAIL, currentStepName.get(), com.aventstack.extentreports.MediaEntityBuilder.createScreenCaptureFromBase64String(fullScreenshot).build());
+            } else {
+                test.log(Status.PASS, currentStepName.get(), com.aventstack.extentreports.MediaEntityBuilder.createScreenCaptureFromBase64String(fullScreenshot).build());
             }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         currentStepIndex.set(currentStepIndex.get() + 1);
     }
+
     @After
     public void tearDownTest(Scenario scenario) {
         if (scenario.isFailed()) {
             System.out.println(scenario.getName());
             test.fail("Scenario failed: " + scenario.getName());
-        }else {
+        } else {
             test.pass("Scenario passed: " + scenario.getName());
         }
         driver.get().quit();
+        currentStepIndex.remove();
+        currentStepName.remove();
+
+    }
+
+    @AfterClass
+    public static void afterClass(){
         extent.flush();
     }
 
