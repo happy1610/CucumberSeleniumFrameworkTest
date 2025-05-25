@@ -29,7 +29,7 @@ public class Hook {
     private static ThreadLocal<Integer> currentStepIndex = ThreadLocal.withInitial(() -> 0);
     private static ThreadLocal<String> currentStepName = ThreadLocal.withInitial(() -> "");
     public static ExtentReports extent;
-    public static ExtentTest test;
+    private static ThreadLocal<ExtentTest> test = new ThreadLocal<>();
 
     public Hook() {
         String timestamp = new java.text.SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date());
@@ -40,7 +40,7 @@ public class Hook {
 
     @Before
     public void initializeTest(Scenario scenario) throws NoSuchFieldException, IllegalAccessException {
-        test = extent.createTest(scenario.getName());
+        test.set(extent.createTest(scenario.getName()));
 
         Field f = scenario.getClass().getDeclaredField("delegate");
         f.setAccessible(true);
@@ -78,11 +78,10 @@ public class Hook {
         try {
             // Capture full-page screenshot
             String fullScreenshot = ((TakesScreenshot) driver.get()).getScreenshotAs(OutputType.BASE64);
-            int threadId = (int) Thread.currentThread().getId();
             if (scenario.isFailed()) {
-                test.log(Status.FAIL, currentStepName.get(), com.aventstack.extentreports.MediaEntityBuilder.createScreenCaptureFromBase64String(fullScreenshot).build());
+                test.get().log(Status.FAIL, currentStepName.get(), com.aventstack.extentreports.MediaEntityBuilder.createScreenCaptureFromBase64String(fullScreenshot).build());
             } else {
-                test.log(Status.PASS, currentStepName.get(), com.aventstack.extentreports.MediaEntityBuilder.createScreenCaptureFromBase64String(fullScreenshot).build());
+                test.get().log(Status.PASS, currentStepName.get(), com.aventstack.extentreports.MediaEntityBuilder.createScreenCaptureFromBase64String(fullScreenshot).build());
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -93,10 +92,9 @@ public class Hook {
     @After
     public void tearDownTest(Scenario scenario) {
         if (scenario.isFailed()) {
-            System.out.println(scenario.getName());
-            test.fail("Scenario failed: " + scenario.getName());
+            test.get().fail("Scenario failed: " + scenario.getName());
         } else {
-            test.pass("Scenario passed: " + scenario.getName());
+            test.get().pass("Scenario passed: " + scenario.getName());
         }
         driver.get().quit();
         currentStepIndex.remove();
@@ -104,7 +102,7 @@ public class Hook {
         steps.remove();
     }
 
-    @AfterClass
+    @AfterAll
     public static void afterClass(){
         extent.flush();
     }
