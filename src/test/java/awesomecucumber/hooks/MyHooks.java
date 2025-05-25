@@ -26,15 +26,17 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 public class Hook {
 
     private static ThreadLocal<WebDriver> driver = new ThreadLocal<>();
-    private static ThreadLocal<List<TestStep>> steps = ThreadLocal.withInitial(ArrayList::new);
-    private static ThreadLocal<Integer> currentStepIndex = ThreadLocal.withInitial(() -> 0);
-    private static ThreadLocal<String> currentStepName = ThreadLocal.withInitial(() -> "");
+    private static ThreadLocal<Map<Integer, List<TestStep>>> steps = ThreadLocal.withInitial(() -> new HashMap<>());
+    private static ThreadLocal<Map<Integer, Integer>> currentStepIndex = ThreadLocal.withInitial(() -> new HashMap<>());
+    private static ThreadLocal<Map<Integer, String>> currentStepName = ThreadLocal.withInitial(() -> new HashMap<>());
     public static ExtentReports extent;
     public static ExtentTest test;
 
@@ -55,10 +57,11 @@ public class Hook {
         testCaseField.setAccessible(true);
         TestCase testCase = (TestCase) testCaseField.get(testCaseState);
         List<TestStep> testStepList = testCase.getTestSteps();
-        steps.set(new ArrayList<>());
+        steps.get().put((int) Thread.currentThread().getId(), new ArrayList<>());
+        System.out.println("Initializing steps for thread: " + Thread.currentThread().getId());
         for (TestStep testStep : testStepList) {
             if (testStep instanceof PickleStepTestStep) {
-                steps.get().add(testStep);
+                steps.get().get((int) Thread.currentThread().getId()).add(testStep);
             }
         }
 
@@ -75,7 +78,7 @@ public class Hook {
         PickleStepTestStep testStep = (PickleStepTestStep) steps.get().get(currentStepIndex.get());
         String stepName = testStep.getStep().getText();
         System.out.println("Execute step: " + stepName);
-        currentStepName.set(stepName);
+        currentStepName.get().put((int) Thread.currentThread().getId(), stepName);
     }
 
 
@@ -84,15 +87,16 @@ public class Hook {
         try {
             // Capture full-page screenshot
             String fullScreenshot = ((TakesScreenshot) driver.get()).getScreenshotAs(OutputType.BASE64);
+            int threadId = (int) Thread.currentThread().getId();
             if (scenario.isFailed()) {
-                test.log(Status.FAIL, currentStepName.get(), com.aventstack.extentreports.MediaEntityBuilder.createScreenCaptureFromBase64String(fullScreenshot).build());
+                test.log(Status.FAIL, currentStepName.get().get(threadId), com.aventstack.extentreports.MediaEntityBuilder.createScreenCaptureFromBase64String(fullScreenshot).build());
             } else {
-                test.log(Status.PASS, currentStepName.get(), com.aventstack.extentreports.MediaEntityBuilder.createScreenCaptureFromBase64String(fullScreenshot).build());
+                test.log(Status.PASS, currentStepName.get().get(threadId), com.aventstack.extentreports.MediaEntityBuilder.createScreenCaptureFromBase64String(fullScreenshot).build());
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        currentStepIndex.set(currentStepIndex.get() + 1);
+        currentStepIndex.get().put((int) Thread.currentThread().getId(), currentStepIndex.get().getOrDefault((int) Thread.currentThread().getId(), 0) + 1);
     }
 
     @After
