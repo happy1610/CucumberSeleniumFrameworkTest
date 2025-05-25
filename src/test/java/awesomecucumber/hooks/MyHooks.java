@@ -32,7 +32,8 @@ public class Hook {
     public static ExtentTest test;
 
     public Hook() {
-        ExtentSparkReporter htmlReporter = new ExtentSparkReporter("extent-report.html");
+        String timestamp = new java.text.SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date());
+        ExtentSparkReporter htmlReporter = new ExtentSparkReporter("extent-report-" + timestamp + ".html");
         extent = new ExtentReports();
         extent.attachReporter(htmlReporter);
     }
@@ -54,7 +55,7 @@ public class Hook {
                 steps.get().add(testStep);
             }
         }
-        
+
         WebDriverManager.chromedriver().setup();
         ChromeOptions chromeOptions = new ChromeOptions();
         chromeOptions.addArguments("--headless");
