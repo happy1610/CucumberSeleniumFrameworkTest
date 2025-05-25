@@ -1,4 +1,4 @@
-package steps;
+package test;
 
 import com.aventstack.extentreports.ExtentReports;
 import com.aventstack.extentreports.ExtentTest;
@@ -39,9 +39,6 @@ public class Hook {
     public static ExtentTest test;
 
     public Hook() {
-    }
-    @BeforeClass
-    public void beforeClass(){
         ExtentSparkReporter htmlReporter = new ExtentSparkReporter("extent-report.html");
         extent = new ExtentReports();
         extent.attachReporter(htmlReporter);
@@ -74,12 +71,17 @@ public class Hook {
         driver.get().manage().window().maximize();
     }
 
-    @BeforeStep
     public void beforeEveryStep(Scenario scenario) {
-        PickleStepTestStep testStep = (PickleStepTestStep) steps.get().get(currentStepIndex.get());
-        String stepName = testStep.getStep().getText();
-        System.out.println("Execute step: " + stepName);
-        currentStepName.set(stepName);
+        List<TestStep> stepList = steps.get();
+        int idx = currentStepIndex.get();
+        if (stepList != null && idx < stepList.size()) {
+            PickleStepTestStep testStep = (PickleStepTestStep) stepList.get(idx);
+            String stepName = testStep.getStep().getText();
+            System.out.println("Execute step: " + stepName);
+            currentStepName.set(stepName);
+        } else {
+            currentStepName.set("");
+        }
     }
 
 
