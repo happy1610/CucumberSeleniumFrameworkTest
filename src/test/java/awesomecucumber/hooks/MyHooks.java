@@ -73,32 +73,31 @@ public class Hook {
     }
 
 
-    @AfterStep
+@AfterStep
     public void afterEveryStep(Scenario scenario) {
-// Capture full-page screenshot with scrolling
-try {
-    JavascriptExecutor js = (JavascriptExecutor) driver.get();
-    long scrollHeight = (long) js.executeScript("return document.body.scrollHeight");
-    long viewportHeight = (long) js.executeScript("return window.innerHeight");
-    int scrollCount = (int) Math.ceil((double) scrollHeight / viewportHeight);
-    StringBuilder fullScreenshot = new StringBuilder();
+        // Capture full-page screenshot with scrolling
+        try {
+            JavascriptExecutor js = (JavascriptExecutor) driver.get();
+            long scrollHeight = (long) js.executeScript("return document.body.scrollHeight");
+            long viewportHeight = (long) js.executeScript("return window.innerHeight");
+            int scrollCount = (int) Math.ceil((double) scrollHeight / viewportHeight);
 
-    for (int i = 0; i < scrollCount; i++) {
-        String partialScreenshot = ((TakesScreenshot) driver.get()).getScreenshotAs(OutputType.BASE64);
-        fullScreenshot.append(partialScreenshot);
-        js.executeScript("window.scrollBy(0, arguments[0]);", viewportHeight);
-        Thread.sleep(500); // Allow time for scrolling
-    }
-
-    if (scenario.isFailed()) {
-        test.get().log(Status.FAIL, currentStepName.get(), com.aventstack.extentreports.MediaEntityBuilder.createScreenCaptureFromBase64String(fullScreenshot.toString()).build());
-    } else {
-        test.get().log(Status.PASS, currentStepName.get(), com.aventstack.extentreports.MediaEntityBuilder.createScreenCaptureFromBase64String(fullScreenshot.toString()).build());
-    }
-} catch (Exception e) {
-    e.printStackTrace();
-}
-        currentStepIndex.set(currentStepIndex.get()+ 1);
+            for (int i = 0; i < scrollCount; i++) {
+                String partialScreenshot = ((TakesScreenshot) driver.get()).getScreenshotAs(OutputType.BASE64);
+                if (scenario.isFailed()) {
+                    test.get().log(Status.FAIL, currentStepName.get() + " - Part " + (i + 1),
+                            com.aventstack.extentreports.MediaEntityBuilder.createScreenCaptureFromBase64String(partialScreenshot).build());
+                } else {
+                    test.get().log(Status.PASS, currentStepName.get() + " - Part " + (i + 1),
+                            com.aventstack.extentreports.MediaEntityBuilder.createScreenCaptureFromBase64String(partialScreenshot).build());
+                }
+                js.executeScript("window.scrollBy(0, arguments[0]);", viewportHeight);
+                Thread.sleep(500); // Allow time for scrolling
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        currentStepIndex.set(currentStepIndex.get() + 1);
     }
 
     @After
